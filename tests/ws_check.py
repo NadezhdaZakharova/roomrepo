@@ -1,11 +1,9 @@
 import asyncio
-import json
 
 import websockets
 
 
 WS_URL = "ws://127.0.0.1:8100/ws/room-1"
-HTTP_POST_URL = "http://127.0.0.1:8100/rooms/room-1/messages"
 
 
 async def receive_once(name: str, ws) -> None:

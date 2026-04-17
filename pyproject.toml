@@ -1,0 +1,2 @@
+[tool.ruff]
+exclude = ["load_data_2.py"]

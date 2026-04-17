@@ -18,6 +18,27 @@
 
   <script>
     let burstBusy = false;
+    let wsReady = false;
+
+    async function submitViaHttp() {
+      const form = document.getElementById('message-form');
+      const usernameInput = form.querySelector('input[name="username"]');
+      const textInput = form.querySelector('input[name="text"]');
+      const username = usernameInput.value.trim();
+      const text = textInput.value.trim();
+      if (!username || !text) return;
+
+      const body = new URLSearchParams({ username, text });
+      const response = await fetch(`/rooms/{{ room_id }}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+
+      if (response.ok) {
+        textInput.value = '';
+      }
+    }
 
     function setFormDefaultsIfEmpty() {
       const form = document.getElementById('message-form');
@@ -52,7 +73,11 @@
         const end = Math.min(count, i + batchSize - 1);
         for (; i <= end; i++) {
           textInput.value = `${baseText} #${i}`;
-          form.requestSubmit();
+          if (wsReady) {
+            form.requestSubmit();
+          } else {
+            await submitViaHttp();
+          }
         }
         await new Promise((r) => setTimeout(r, 0));
       }
@@ -61,6 +86,23 @@
       if (btn100) btn100.disabled = false;
       if (btn1000) btn1000.disabled = false;
     }
+
+    const chatRoot = document.getElementById('chat-root');
+    chatRoot.addEventListener('htmx:wsOpen', () => {
+      wsReady = true;
+    });
+    chatRoot.addEventListener('htmx:wsClose', () => {
+      wsReady = false;
+    });
+    chatRoot.addEventListener('htmx:wsError', () => {
+      wsReady = false;
+    });
+
+    document.getElementById('message-form').addEventListener('submit', async (event) => {
+      if (wsReady) return;
+      event.preventDefault();
+      await submitViaHttp();
+    });
   </script>
 </section>
 {% endblock %}
